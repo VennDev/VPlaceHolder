@@ -20,9 +20,6 @@ class VPlaceHolder extends PluginBase
 
     protected function onEnable(): void
     {
-        VPlaceHolder::registerPlaceHolder("{player}", function (string $player, int $age) {
-            return "Hello $player, your age is $age";
-        });
         $this->getServer()->getPluginManager()->registerEvents(new listener\EventListener($this), $this);
     }
 
