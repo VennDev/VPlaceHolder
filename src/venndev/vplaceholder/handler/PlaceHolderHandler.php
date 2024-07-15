@@ -26,8 +26,12 @@ trait PlaceHolderHandler
         return array_reduce(array_keys(self::$placeholders), function ($text, $key) {
             $value = self::$placeholders[$key];
             if (is_callable($value)) {
-                return preg_replace_callback("/$key\((.*?)\)/", function ($matches) use ($value) {
-                    return call_user_func_array($value, explode(",", $matches[1]));
+                return preg_replace_callback("/$key\((.*?)\)/", function ($matches) use ($key, $value) {
+                    if (empty($matches[1]) || !is_string($matches[1])) {
+                        throw new InvalidArgumentException("The placeholder $key must have a parameter");
+                    }
+                    $params = preg_split('/, (?=(?:[^"]*"[^"]*")*[^"]*$)/', $matches[1]);
+                    return $value(...str_replace(['"', "'"], '', $params));
                 }, $text);
             }
             return str_replace($key, $value, $text);
