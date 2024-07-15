@@ -5,22 +5,19 @@ declare(strict_types=1);
 namespace venndev\vplaceholder;
 
 use pocketmine\plugin\PluginBase;
-use pocketmine\utils\SingletonTrait;
 use venndev\vplaceholder\handler\PlaceHolderHandler;
 
-class VPlaceHolder extends PluginBase
+final class VPlaceHolder
 {
-    use SingletonTrait;
     use PlaceHolderHandler;
 
-    protected function onLoad(): void
-    {
-        self::setInstance($this);
-    }
+    private static bool $enabled = false;
 
-    protected function onEnable(): void
+    public static function init(PluginBase $plugin): void
     {
-        $this->getServer()->getPluginManager()->registerEvents(new listener\EventListener($this), $this);
+        if (self::$enabled) return;
+        $plugin->getServer()->getPluginManager()->registerEvents(new listener\EventListener(), $plugin);
+        self::$enabled = true;
     }
 
 }
