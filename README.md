@@ -22,5 +22,5 @@ $player->sendTip("Hello {player}");
 VPlaceHolder::registerPlaceHolder("{player}", function (string $player, int $age) {
     return "Hello $player, your age is $age";
 });
-$player->sendTip("Hello {player}(VennDev, 1000)");
+$player->sendTip("{player}(VennDev, 1000)");
 ```
