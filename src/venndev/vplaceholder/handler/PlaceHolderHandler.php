@@ -30,7 +30,7 @@ trait PlaceHolderHandler
                     if (empty($matches[1]) || !is_string($matches[1])) {
                         throw new InvalidArgumentException("The placeholder $key must have a parameter");
                     }
-                    $params = preg_split('/, (?=(?:[^"]*"[^"]*")*[^"]*$)/', $matches[1]);
+                    $params = preg_split("/, (?=(?:[^']*'[^']*')*[^']*$)/", $matches[1]);
                     return $value(...str_replace(['"', "'"], '', $params));
                 }, $text);
             }
