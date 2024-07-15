@@ -2,7 +2,7 @@
 - The virion makes it possible for your server to call out your parameters through a form for notifications or words displayed on the player's interface.
 
 # Links
-- Modules PlaceHolder Shop: [Link](https://github.com/VennDev/VPlaceHolderModules/tree/main/modules_placeholder)
+- Shop Modules PlaceHolder: [Link](https://github.com/VennDev/VPlaceHolderModules/tree/main/modules_placeholder)
 
 # Features
 - ✔ Support Title, Messages, ... all related to the chat displayed to the player.
