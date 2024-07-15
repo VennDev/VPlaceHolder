@@ -8,6 +8,10 @@
 
 # API
 - You want register one placeholder ?
+- You should init virion before plugin enable.
+```php
+VPlaceHolder::init($this);
+```
 - Register with type `string|int|float` value
 ```php
 VPlaceHolder::registerPlaceHolder('{player}', 'venndev');
