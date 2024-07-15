@@ -1,6 +1,9 @@
 # VPlaceHolder
 - The virion makes it possible for your server to call out your parameters through a form for notifications or words displayed on the player's interface.
 
+# Links
+- Modules PlaceHolder Shop: [Link](https://github.com/VennDev/VPlaceHolderModules/tree/main/modules_placeholder)
+
 # Features
 - ✔ Support Title, Messages, ... all related to the chat displayed to the player.
 - ✔ Support Scoreboard, Bossbar, Form
@@ -9,7 +12,6 @@
 # Notes
 - The `modules_placeholder` directory will be created when there is a certain plugin in your server that init virion.
 - That directory will help you design the available holders from the developers, and if you're interested, create a module and send it to me for review! :D
-- Link modules_placeholder: [Link](https://github.com/VennDev/VPlaceHolderModules/tree/main/modules_placeholder)
 
 # API
 - You want register one placeholder ?
