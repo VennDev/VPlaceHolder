@@ -1,8 +1,0 @@
----
-name: VPlaceholder
-main: venndev\vplaceholder\VPlaceholder
-version: 1.0.1
-api: 5.0.0
-author: VennDev
-description: VPlaceholder is a plugin for PocketMine-MP
-...
