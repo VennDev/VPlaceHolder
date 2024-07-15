@@ -15,12 +15,12 @@ VPlaceHolder::init($this);
 - Register with type `string|int|float` value
 ```php
 VPlaceHolder::registerPlaceHolder('{player}', 'venndev');
-$player->sendTip("Hello {player}");
+$player->sendTip("Hello {player}"); // Output: Hello venndev
 ```
 - Register with type `callable` value
 ```php
 VPlaceHolder::registerPlaceHolder("{player}", function (string $player, int $age) {
     return "Hello $player, your age is $age";
 });
-$player->sendTip("{player}(VennDev, 1000)");
+$player->sendTip("{player}(VennDev, 1000)"); // Output: Hello VennDev, your age is 1000
 ```
