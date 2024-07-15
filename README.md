@@ -1,6 +1,11 @@
 # VPlaceHolder
 - The plugin makes it possible for your server to call out your parameters through a form for notifications or words displayed on the player's interface.
 
+# Features
+- ✔ Support Title, Messages, ... all related to the chat displayed to the player.
+- ✔ Support Scoreboard, Bossbar, Form
+- ✔ Support Name Item in inventory player or all type inventories.
+
 # API
 - You want register one placeholder ?
 - Register with type string|int|float value
