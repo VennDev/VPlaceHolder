@@ -31,3 +31,9 @@ VPlaceHolder::registerPlaceHolder("{player}", function (string $player, int $age
 });
 $player->sendTip("{player}(VennDev, 1000)"); // Output: Hello VennDev, your age is 1000
 ```
+```php
+VPlaceHolder::registerPlaceHolder("{say_player}", function (string $player, string $message) {
+    return $message . $player;
+});
+$player->sendTip("{player}(VennDev, 'Hello, you')"); // Output: Hello, you VennDev
+```
