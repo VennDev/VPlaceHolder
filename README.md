@@ -1,5 +1,5 @@
 # VPlaceHolder
-- The plugin makes it possible for your server to call out your parameters through a form for notifications or words displayed on the player's interface.
+- The virion makes it possible for your server to call out your parameters through a form for notifications or words displayed on the player's interface.
 
 # Features
 - ✔ Support Title, Messages, ... all related to the chat displayed to the player.
