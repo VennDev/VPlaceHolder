@@ -13,6 +13,8 @@ use vennv\vapm\FiberManager;
 trait PlaceHolderHandler
 {
 
+    private const PLACEHOLDER_AUTO_KEY = "A";
+
     private static int|float $lastTimeCleaned = 0;
     private static array $placeholdersNormal = [];
     private static array $placeholdersPromises = [];
@@ -88,15 +90,16 @@ trait PlaceHolderHandler
     /**
      * @throws Throwable
      */
-    private static function pregMatchCallable(string $key, string $text, callable $value, bool $isAsync = false): Async|string
+    private static function pregMatchCallable(Player $player, string $key, string $text, callable $value, bool $isAsync = false): Async|string
     {
         if (preg_match_all("/$key\((.*?)\)/", $text, $matches, PREG_SET_ORDER)) {
             if ($isAsync) {
-                return new Async(function() use ($matches, $value, $text, $key): string {
+                return new Async(function() use ($player, $matches, $value, $text, $key): string {
                     foreach ($matches as $match) {
                         if (empty($match[1]) || !is_string($match[1])) throw new InvalidArgumentException("The placeholder $key must have a parameter");
                         $params = preg_split("/, (?=(?:[^']*'[^']*')*[^']*$)/", $match[1]);
-                        $replacement = Async::await(Async::await($value(...str_replace(['"', "'"], '', $params))));
+                        $strReplaceList = str_replace(['"', "'"], '', $params);
+                        $strReplaceList[0] === self::PLACEHOLDER_AUTO_KEY ? $replacement = Async::await($value($player->getName(), ...$strReplaceList)) : $replacement = Async::await($value(...$strReplaceList));
                         $text = str_replace($match[0], $replacement, $text);
                     }
                     return $text;
@@ -105,7 +108,8 @@ trait PlaceHolderHandler
                 foreach ($matches as $match) {
                     if (empty($match[1]) || !is_string($match[1])) throw new InvalidArgumentException("The placeholder $key must have a parameter");
                     $params = preg_split("/, (?=(?:[^']*'[^']*')*[^']*$)/", $match[1]);
-                    $replacement = $value(...str_replace(['"', "'"], '', $params));
+                    $strReplaceList = str_replace(['"', "'"], '', $params);
+                    $strReplaceList[0] === self::PLACEHOLDER_AUTO_KEY ? $replacement = $value($player->getName(), ...$strReplaceList) : $replacement = $value(...$strReplaceList);
                     $text = str_replace($match[0], $replacement, $text);
                 }
             }
@@ -129,13 +133,13 @@ trait PlaceHolderHandler
             }
             if (!isset(self::$placeHoldersPromisesProcessed[$playerXuid])) self::$placeHoldersPromisesProcessed[$playerXuid] = [];
             if (!isset(self::$placeHoldersPromisesProcessed[$playerXuid][$text])) {
-                new Async(function () use ($playerXuid, $lastText, $text): void {
+                new Async(function () use ($player, $playerXuid, $lastText, $text): void {
                     foreach (self::$placeholdersPromises as $key => $value) {
-                        $text = Async::await(self::pregMatchCallable($key, $text, $value, true));
+                        $text = Async::await(self::pregMatchCallable($player, $key, $text, $value, true));
                         if (str_replace(array_keys(self::$placeholdersPromises), "...", $text) === $text) break;
                     }
                     foreach (self::$placeholdersNormal as $key => $value) {
-                        is_callable($value) ? $text = self::pregMatchCallable($key, $text, $value) : $text = str_replace($key, $value, $text);
+                        is_callable($value) ? $text = self::pregMatchCallable($player, $key, $text, $value) : $text = str_replace($key, $value, $text);
                         if (str_replace(array_keys(self::$placeholdersNormal), "...", $text) === $text) break;
                         FiberManager::wait();
                     }
@@ -152,7 +156,7 @@ trait PlaceHolderHandler
             if ($text === $lastText) return $replacePromise;
         } else {
             foreach (self::$placeholdersNormal as $key => $value) {
-                is_callable($value) ? $text = self::pregMatchCallable($key, $text, $value) : $text = str_replace($key, $value, $text);
+                is_callable($value) ? $text = self::pregMatchCallable($player, $key, $text, $value) : $text = str_replace($key, $value, $text);
                 if (str_replace(array_keys(self::$placeholdersNormal), "...", $text) === $text) break;
             }
         }
