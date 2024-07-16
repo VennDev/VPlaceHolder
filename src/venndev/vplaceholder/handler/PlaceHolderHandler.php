@@ -62,6 +62,32 @@ trait PlaceHolderHandler
     /**
      * @throws Throwable
      */
+    public static function closureOnePlaceHolder(string $text, callable $callable): void
+    {
+        $replacePromise = str_replace(array_keys(self::$placeholdersPromises), "...", $text);
+        if ($replacePromise !== $text) {
+            new Async(function () use ($text, $callable): void {
+                foreach (self::$placeholdersPromises as $key => $value) {
+                    $text = Async::await(self::pregMatchCallable($key, $text, $value, true));
+                    if (str_replace(array_keys(self::$placeholdersPromises), "...", $text) === $text) break;
+                }
+                $callable($text);
+            });
+        } else {
+            new Async(function () use ($text, $callable): void {
+                foreach (self::$placeholdersNormal as $key => $value) {
+                    is_callable($value) ? $text = self::pregMatchCallable($key, $text, $value) : $text = str_replace($key, $value, $text);
+                    if (str_replace(array_keys(self::$placeholdersNormal), "...", $text) === $text) break;
+                    FiberManager::wait();
+                }
+                $callable($text);
+            });
+        }
+    }
+
+    /**
+     * @throws Throwable
+     */
     private static function pregMatchCallable(string $key, string $text, callable $value, bool $isAsync = false): Async|string
     {
         if (preg_match_all("/$key\((.*?)\)/", $text, $matches, PREG_SET_ORDER)) {
