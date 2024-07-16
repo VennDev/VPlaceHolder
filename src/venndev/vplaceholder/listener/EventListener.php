@@ -79,7 +79,7 @@ final readonly class EventListener implements Listener
             } catch (Throwable) {
                 Server::getInstance()->getLogger()->Debug("It's just that the packets have not been sent carefully to the player." . $packet->getName());
             }
-            new Promise(function ($resolve, $reject) use ($player): void {
+            Promise::c(function ($resolve, $reject) use ($player): void {
                 try {
                     if ($player instanceof Player && $player->getCurrentWindow() !== null) {
                         foreach ($player->getCurrentWindow()->getContents() as $slot => $item) {
@@ -89,7 +89,6 @@ final readonly class EventListener implements Listener
                                 $lore = $itemClone->getLore();
                                 foreach ($lore as $key => $value) {
                                     $lore[$key] = VPlaceHolder::replacePlaceHolder($player, $value);
-
                                     FiberManager::wait();
                                 }
                                 $itemClone->setLore($lore);
@@ -97,11 +96,9 @@ final readonly class EventListener implements Listener
                             } catch (Throwable) {
                                 Server::getInstance()->getLogger()->Debug("It's just that the items have not been sent carefully to the player.");
                             }
-
                             FiberManager::wait();
                         }
                     }
-
                     $resolve();
                 } catch (Throwable $e) {
                     $reject($e);
