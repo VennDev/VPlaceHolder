@@ -11,6 +11,7 @@
 - ✔ Support Title, Messages, ... all related to the chat displayed to the player.
 - ✔ Support Scoreboard, Bossbar, Form
 - ✔ Support Name Item in inventory player or all type inventories.
+- ✔ Support asynchronous tasks coming from [LibVapmPMMP](https://github.com/VennDev/LibVapmPMMP) via Async and Promise methods
 
 # Notes
 - The `modules_placeholder` directory will be created when there is a certain plugin in your server that init virion.
