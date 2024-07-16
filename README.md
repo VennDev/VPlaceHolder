@@ -54,3 +54,4 @@ VPlaceHolder::registerPlaceHolder("{get_money_all_players}", function (): \vennv
 }, isPromise: true);
 $player->sendTip("{get_money_all_players}()"); // Output: <list money all players>
 ```
+One example more here: [Link](https://github.com/VennDev/VPlaceHolderModules/blob/main/modules_placeholder/VPlayerDataSaver.php#L30)
