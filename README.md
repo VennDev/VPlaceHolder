@@ -45,7 +45,6 @@ $player->sendTip("{player}(VennDev, 'Hello, you')"); // Output: Hello, you VennD
 ```php
 VPlaceHolder::registerPlaceHolder("{get_money_all_players}", function (): \vennv\vapm\Async {
     return new \vennv\vapm\Async(function (): string {
-        $moneyList = [];
         $players = Server::getInstance()->getOnlinePlayers();
         $moneyLists = \vennv\vapm\Async::await(Money::getInstance()->getMoneyAll($players));
         return implode(", ", $moneyList);
