@@ -72,7 +72,6 @@ trait PlaceHolderHandler
                         $params = preg_split("/, (?=(?:[^']*'[^']*')*[^']*$)/", $match[1]);
                         $replacement = Async::await(Async::await($value(...str_replace(['"', "'"], '', $params))));
                         $text = str_replace($match[0], $replacement, $text);
-                        FiberManager::wait();
                     }
                     return $text;
                 });
