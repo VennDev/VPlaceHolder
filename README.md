@@ -37,3 +37,16 @@ VPlaceHolder::registerPlaceHolder("{say_player}", function (string $player, stri
 });
 $player->sendTip("{player}(VennDev, 'Hello, you')"); // Output: Hello, you VennDev
 ```
+- Register Async PlaceHolder
+```php
+VPlaceHolder::registerPlaceHolder("{get_money_all_players}", function (): \vennv\vapm\Async {
+    return new \vennv\vapm\Async(function (): string {
+        $moneyList = [];
+        $players = Server::getInstance()->getOnlinePlayers();
+        // TODO: Implement this
+
+        return implode(", ", $moneyList);
+    });
+}, isPromise: true);
+$player->sendTip("{get_money_all_players}()"); // Output: <list money all players>
+```
