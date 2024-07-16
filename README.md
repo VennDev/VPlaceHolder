@@ -60,7 +60,13 @@ VPlaceHolder::closureOnePlaceHolder("//player", function (string $player) {
     var_dump($player); // string(8) "VennDev"
 });
 ```
-
+# Suppose you want to call a PlaceHolder that automatically assigns a player?
+- Parameter A represents the input that is the player you want to announce.
+```php
+$player->sendTip("{x}(A)"); // Output: player's position x.
+```
+- Note that this `A` parameter only works when you have made a prior notification of player designation such as events or methods with player presence.
+- Of course it can't be applied in the `VPlaceHolder::closureOnePlaceHolder(...)`
 # Credits
 - API Designer: [VennDev](https://github.com/VennDev)
 - Paypal: pnam5005@gmail.com
