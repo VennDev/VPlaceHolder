@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace venndev\vplaceholder\manager;
 
 use pocketmine\plugin\PluginBase;
+use RuntimeException;
 
 trait ModuleManager
 {
@@ -21,6 +22,7 @@ trait ModuleManager
     {
         if (!file_exists(self::$modulePath . DIRECTORY_SEPARATOR . $module)) return;
         require_once self::$modulePath . DIRECTORY_SEPARATOR . $module;
+        if (!isset($author) || !isset($version)) throw new RuntimeException("Invalid module file: $module, missing author or version variable!");
     }
 
     public static function runModules(): void
