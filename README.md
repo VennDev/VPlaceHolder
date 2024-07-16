@@ -4,6 +4,9 @@
 # Links
 - Shop Modules PlaceHolder: [Link](https://github.com/VennDev/VPlaceHolderModules/tree/main/modules_placeholder)
 
+# Virion Required
+- [LibVapmPMMP](https://github.com/VennDev/LibVapmPMMP)
+
 # Features
 - ✔ Support Title, Messages, ... all related to the chat displayed to the player.
 - ✔ Support Scoreboard, Bossbar, Form
