@@ -15,8 +15,11 @@ use pocketmine\network\mcpe\protocol\ModalFormRequestPacket;
 use pocketmine\network\mcpe\protocol\SetScorePacket;
 use pocketmine\event\server\DataPacketSendEvent;
 use pocketmine\network\mcpe\protocol\TextPacket;
+use pocketmine\Server;
 use venndev\vplaceholder\VPlaceHolder;
 use Throwable;
+use vennv\vapm\FiberManager;
+use vennv\vapm\Promise;
 
 final readonly class EventListener implements Listener
 {
@@ -32,11 +35,19 @@ final readonly class EventListener implements Listener
             $player = $target->getPlayer();
             if ($player !== null && $player->isConnected()) {
                 foreach ($packets as $packet) {
-                    if ($packet instanceof SetScorePacket) foreach ($packet->entries as $entry) try { $entry->customName = VPlaceHolder::replacePlaceHolder($player, $entry->customName); } catch (Throwable) {}
+                    if ($packet instanceof SetScorePacket) foreach ($packet->entries as $entry) try {
+                        $entry->customName = VPlaceHolder::replacePlaceHolder($player, $entry->customName);
+                    } catch (Throwable) {
+                        Server::getInstance()->getLogger()->Debug("It's just that the packets have not been sent carefully to the player." . $packet->getName());
+                    }
                     if ($packet instanceof SetDisplayObjectivePacket) $packet->displayName = VPlaceHolder::replacePlaceHolder($player, $packet->displayName);
                     if ($packet instanceof TextPacket) $packet->message = VPlaceHolder::replacePlaceHolder($player, $packet->message);
                     if ($packet instanceof SetTitlePacket) $packet->text = VPlaceHolder::replacePlaceHolder($player, $packet->text);
-                    if ($packet instanceof BossEventPacket) try { $packet->title = VPlaceHolder::replacePlaceHolder($player, $packet->title); } catch (Throwable) {}
+                    if ($packet instanceof BossEventPacket) try {
+                        $packet->title = VPlaceHolder::replacePlaceHolder($player, $packet->title);
+                    } catch (Throwable) {
+                        Server::getInstance()->getLogger()->Debug("It's just that the packets have not been sent carefully to the player." . $packet->getName());
+                    }
                     if ($packet instanceof ModalFormRequestPacket) {
                         $data = json_decode($packet->formData, true);
                         $data["title"] = VPlaceHolder::replacePlaceHolder($player, $data["title"]);
@@ -63,8 +74,39 @@ final readonly class EventListener implements Listener
         if ($player !== null && $player->isConnected()) {
             if ($packet instanceof TextPacket) $packet->message = VPlaceHolder::replacePlaceHolder($player, $packet->message);
             if ($packet instanceof CommandRequestPacket) $packet->command = VPlaceHolder::replacePlaceHolder($player, $packet->command);
-            if ($packet instanceof BossEventPacket) try { $packet->title = VPlaceHolder::replacePlaceHolder($player, $packet->title); } catch (Throwable) {}
-            if ($player instanceof Player && $player->getCurrentWindow() !== null) foreach ($player->getCurrentWindow()->getContents() as $item) try { $item->setCustomName(VPlaceHolder::replacePlaceHolder($player, $item->getName())); } catch (Throwable) {}
+            if ($packet instanceof BossEventPacket) try {
+                $packet->title = VPlaceHolder::replacePlaceHolder($player, $packet->title);
+            } catch (Throwable) {
+                Server::getInstance()->getLogger()->Debug("It's just that the packets have not been sent carefully to the player." . $packet->getName());
+            }
+            new Promise(function ($resolve, $reject) use ($player): void {
+                try {
+                    if ($player instanceof Player && $player->getCurrentWindow() !== null) {
+                        foreach ($player->getCurrentWindow()->getContents() as $slot => $item) {
+                            try {
+                                $itemClone = clone $item;
+                                $itemClone->setCustomName(VPlaceHolder::replacePlaceHolder($player, $itemClone->getName()));
+                                $lore = $itemClone->getLore();
+                                foreach ($lore as $key => $value) {
+                                    $lore[$key] = VPlaceHolder::replacePlaceHolder($player, $value);
+
+                                    FiberManager::wait();
+                                }
+                                $itemClone->setLore($lore);
+                                $player->getCurrentWindow()->setItem($slot, $itemClone);
+                            } catch (Throwable) {
+                                Server::getInstance()->getLogger()->Debug("It's just that the items have not been sent carefully to the player.");
+                            }
+
+                            FiberManager::wait();
+                        }
+                    }
+
+                    $resolve();
+                } catch (Throwable $e) {
+                    $reject($e);
+                }
+            });
         }
     }
 
