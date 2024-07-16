@@ -47,8 +47,7 @@ VPlaceHolder::registerPlaceHolder("{get_money_all_players}", function (): \vennv
     return new \vennv\vapm\Async(function (): string {
         $moneyList = [];
         $players = Server::getInstance()->getOnlinePlayers();
-        // TODO: Implement this
-
+        $moneyLists = \vennv\vapm\Async::await(Money::getInstance()->getMoneyAll($players));
         return implode(", ", $moneyList);
     });
 }, isPromise: true);
