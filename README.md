@@ -55,7 +55,7 @@ VPlaceHolder::registerPlaceHolder("{get_money_all_players}", function (): \vennv
 $player->sendTip("{get_money_all_players}()"); // Output: <list money all players>
 ```
 One example more here: [Link](https://github.com/VennDev/VPlaceHolderModules/blob/main/modules_placeholder/VPlayerDataSaver.php#L30)
-- Use your closure with VPlaceHolder
+- Use your closure with VPlaceHolder, use to call libraries from VPlaceHolder to retrieve the results and process the results without skipping the fumble from checking the relevant data to be retrieved.
 ```php
 VPlaceHolder::registerPlaceHolder("//player", "VennDev");
 VPlaceHolder::closureOnePlaceHolder("//player", function (string $player) {
