@@ -4,48 +4,135 @@ declare(strict_types=1);
 
 namespace venndev\vplaceholder\handler;
 
+use Throwable;
 use InvalidArgumentException;
+use pocketmine\player\Player;
+use vennv\vapm\Async;
+use vennv\vapm\FiberManager;
 
 trait PlaceHolderHandler
 {
 
-    private static array $placeholders = [];
+    private static int|float $lastTimeCleaned = 0;
+    private static array $placeholdersNormal = [];
+    private static array $placeholdersPromises = [];
+    private static array $placeHoldersPromisesProcessed = [];
 
-    public static function registerPlaceHolder(string $placeholder, int|float|string|callable $value): void
+    public static function getAllPlaceHolders(): array
     {
-        !isset(self::$placeholders[$placeholder]) ? self::$placeholders[$placeholder] = $value : throw new InvalidArgumentException("The placeholder $placeholder is already registered");
+        return array_merge(self::$placeholdersNormal, self::$placeholdersPromises);
     }
 
-    public static function getPlaceHolder(string $placeholder): int|float|string|callable|null
+    public static function getPlaceHolder(string $placeholder): int|float|string|callable
     {
-        return self::$placeholders[$placeholder] ?? null;
+        if (isset(self::$placeholdersNormal[$placeholder])) {
+            return self::$placeholdersNormal[$placeholder];
+        } elseif (isset(self::$placeholdersPromises[$placeholder])) {
+            return self::$placeholdersPromises[$placeholder];
+        }
+        throw new InvalidArgumentException("The placeholder $placeholder is not registered!");
     }
 
-    public static function replacePlaceHolder(string $text): string
+    public static function isPlaceHolderRegistered(string $placeholder): bool
     {
-        return array_reduce(array_keys(self::$placeholders), function ($text, $key) {
-            $value = self::$placeholders[$key];
-            if (is_callable($value)) {
-                return preg_replace_callback("/$key\((.*?)\)/", function ($matches) use ($key, $value) {
-                    if (empty($matches[1]) || !is_string($matches[1])) {
-                        throw new InvalidArgumentException("The placeholder $key must have a parameter");
-                    }
-                    $params = preg_split("/, (?=(?:[^']*'[^']*')*[^']*$)/", $matches[1]);
-                    return $value(...str_replace(['"', "'"], '', $params));
-                }, $text);
-            }
-            return str_replace($key, $value, $text);
-        }, $text);
+        return isset(self::$placeholdersNormal[$placeholder]) || isset(self::$placeholdersPromises[$placeholder]);
     }
 
-    public static function getPlaceHolders(): array
+    public static function registerPlaceHolder(string $placeholder, int|float|string|callable $value, bool $isPromise = false): void
     {
-        return self::$placeholders;
+        if (isset(self::$placeholdersNormal[$placeholder]) || isset(self::$placeholdersPromises[$placeholder])) throw new InvalidArgumentException("The placeholder $placeholder is already registered!");
+        if ($isPromise && is_callable($value)) {
+            self::$placeholdersPromises[$placeholder] = $value;
+        } elseif (!$isPromise) {
+            self::$placeholdersNormal[$placeholder] = $value;
+        } else {
+            throw new InvalidArgumentException("The placeholder $placeholder must be a callable!");
+        }
     }
 
     public static function unregisterPlaceHolder(string $placeholder): void
     {
-        unset(self::$placeholders[$placeholder]);
+        if (isset(self::$placeholdersNormal[$placeholder])) {
+            unset(self::$placeholdersNormal[$placeholder]);
+        } elseif (isset(self::$placeholdersPromises[$placeholder])) {
+            unset(self::$placeholdersPromises[$placeholder]);
+        }
+    }
+
+    /**
+     * @throws Throwable
+     */
+    private static function pregMatchCallable(string $key, string $text, callable $value, bool $isAsync = false): Async|string
+    {
+        if (preg_match_all("/$key\((.*?)\)/", $text, $matches, PREG_SET_ORDER)) {
+            if ($isAsync) {
+                return new Async(function() use ($matches, $value, $text, $key): string {
+                    foreach ($matches as $match) {
+                        if (empty($match[1]) || !is_string($match[1])) throw new InvalidArgumentException("The placeholder $key must have a parameter");
+                        $params = preg_split("/, (?=(?:[^']*'[^']*')*[^']*$)/", $match[1]);
+                        $replacement = Async::await(Async::await($value(...str_replace(['"', "'"], '', $params))));
+                        $text = str_replace($match[0], $replacement, $text);
+                        FiberManager::wait();
+                    }
+                    return $text;
+                });
+            } else {
+                foreach ($matches as $match) {
+                    if (empty($match[1]) || !is_string($match[1])) throw new InvalidArgumentException("The placeholder $key must have a parameter");
+                    $params = preg_split("/, (?=(?:[^']*'[^']*')*[^']*$)/", $match[1]);
+                    $replacement = $value(...str_replace(['"', "'"], '', $params));
+                    $text = str_replace($match[0], $replacement, $text);
+                }
+            }
+        }
+
+        return $text;
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public static function replacePlaceHolder(Player $player, string $text): string
+    {
+        $replacePromise = str_replace(array_keys(self::$placeholdersPromises), "...", $text);
+        if ($replacePromise !== $text) {
+            $lastText = $text;
+            $playerXuid = $player->getXuid();
+            if (microtime(true) - self::$lastTimeCleaned > 100) {
+                self::$lastTimeCleaned = microtime(true);
+                self::$placeHoldersPromisesProcessed = [];
+            }
+            if (!isset(self::$placeHoldersPromisesProcessed[$playerXuid])) self::$placeHoldersPromisesProcessed[$playerXuid] = [];
+            if (!isset(self::$placeHoldersPromisesProcessed[$playerXuid][$text])) {
+                new Async(function () use ($playerXuid, $lastText, $text): void {
+                    foreach (self::$placeholdersPromises as $key => $value) {
+                        $text = Async::await(self::pregMatchCallable($key, $text, $value, true));
+                        if (str_replace(array_keys(self::$placeholdersPromises), "...", $text) === $text) break;
+                    }
+                    foreach (self::$placeholdersNormal as $key => $value) {
+                        is_callable($value) ? $text = self::pregMatchCallable($key, $text, $value) : $text = str_replace($key, $value, $text);
+                        if (str_replace(array_keys(self::$placeholdersNormal), "...", $text) === $text) break;
+                        FiberManager::wait();
+                    }
+                    self::$placeHoldersPromisesProcessed[$playerXuid][$lastText] = [$text, microtime(true)];
+                });
+            } else {
+                if (microtime(true) - self::$placeHoldersPromisesProcessed[$playerXuid][$text][1] > 10) {
+                    unset(self::$placeHoldersPromisesProcessed[$playerXuid][$text]);
+                } else {
+                    $text = self::$placeHoldersPromisesProcessed[$playerXuid][$text][0];
+                }
+            }
+
+            if ($text === $lastText) return $replacePromise;
+        } else {
+            foreach (self::$placeholdersNormal as $key => $value) {
+                is_callable($value) ? $text = self::pregMatchCallable($key, $text, $value) : $text = str_replace($key, $value, $text);
+                if (str_replace(array_keys(self::$placeholdersNormal), "...", $text) === $text) break;
+            }
+        }
+
+        return $text;
     }
 
 }
