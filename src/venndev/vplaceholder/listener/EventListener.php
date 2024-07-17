@@ -17,9 +17,9 @@ use pocketmine\event\server\DataPacketSendEvent;
 use pocketmine\network\mcpe\protocol\TextPacket;
 use pocketmine\Server;
 use venndev\vplaceholder\VPlaceHolder;
-use Throwable;
 use vennv\vapm\FiberManager;
 use vennv\vapm\Promise;
+use Throwable;
 
 final readonly class EventListener implements Listener
 {
