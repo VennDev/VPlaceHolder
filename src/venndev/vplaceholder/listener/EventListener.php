@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace venndev\vplaceholder\listener;
 
+use pocketmine\Server;
 use pocketmine\player\Player;
 use pocketmine\event\Listener;
 use pocketmine\network\mcpe\protocol\SetTitlePacket;
@@ -15,14 +16,16 @@ use pocketmine\network\mcpe\protocol\ModalFormRequestPacket;
 use pocketmine\network\mcpe\protocol\SetScorePacket;
 use pocketmine\event\server\DataPacketSendEvent;
 use pocketmine\network\mcpe\protocol\TextPacket;
-use pocketmine\Server;
 use venndev\vplaceholder\VPlaceHolder;
 use vennv\vapm\FiberManager;
 use vennv\vapm\Promise;
 use Throwable;
+use vennv\vapm\System;
 
-final readonly class EventListener implements Listener
+final class EventListener implements Listener
 {
+
+    private static array $promiseInventory = [];
 
     /**
      * @throws Throwable
@@ -79,31 +82,47 @@ final readonly class EventListener implements Listener
             } catch (Throwable) {
                 Server::getInstance()->getLogger()->Debug("It's just that the packets have not been sent carefully to the player." . $packet->getName());
             }
-            Promise::c(function ($resolve, $reject) use ($player): void {
-                try {
-                    if ($player instanceof Player && $player->getCurrentWindow() !== null) {
-                        foreach ($player->getCurrentWindow()->getContents() as $slot => $item) {
-                            try {
-                                $itemClone = clone $item;
-                                $itemClone->setCustomName(VPlaceHolder::replacePlaceHolder($player, $itemClone->getName()));
-                                $lore = $itemClone->getLore();
-                                foreach ($lore as $key => $value) {
-                                    $lore[$key] = VPlaceHolder::replacePlaceHolder($player, $value);
+
+            // Process the player's window inventory
+            if (!isset(self::$promiseInventory[$player->getXuid()])) {
+                System::setTimeout(function () use ($player): void {
+                    self::$promiseInventory[$player->getXuid()] = Promise::c(function ($resolve, $reject) use ($player): void {
+                        try {
+                            if ($player instanceof Player && ($window = $player->getCurrentWindow()) !== null) {
+                                foreach ($window->getContents() as $case => $item) {
+                                    try {
+                                        $itemClone = clone $item;
+                                        $itemName = $itemClone->getName();
+                                        $itemNameReplace = VPlaceHolder::replacePlaceHolder($player, $itemName);
+                                        $itemClone->setCustomName($itemNameReplace);
+                                        $canSet = $itemName !== $itemNameReplace;
+                                        $lore = $itemClone->getLore();
+                                        foreach ($lore as $key => $value) {
+                                            $loreReplace = VPlaceHolder::replacePlaceHolder($player, $value);
+                                            $lore[$key] = $loreReplace;
+                                            if (!$canSet) $canSet = $value !== $loreReplace;
+                                            FiberManager::wait();
+                                        }
+                                        $itemClone->setLore($lore);
+                                        if ($canSet) $window->setItem($case, $itemClone);
+                                    } catch (Throwable) {
+                                        Server::getInstance()->getLogger()->Debug("It's just that the items have not been sent carefully to the player.");
+                                    }
                                     FiberManager::wait();
                                 }
-                                $itemClone->setLore($lore);
-                                $player->getCurrentWindow()->setItem($slot, $itemClone);
-                            } catch (Throwable) {
-                                Server::getInstance()->getLogger()->Debug("It's just that the items have not been sent carefully to the player.");
                             }
-                            FiberManager::wait();
+                            $resolve();
+                        } catch (Throwable $e) {
+                            $reject($e);
                         }
-                    }
-                    $resolve();
-                } catch (Throwable $e) {
-                    $reject($e);
-                }
-            });
+                    })->then(function () use ($player): void {
+                        unset(self::$promiseInventory[$player->getXuid()]);
+                    })->catch(function (Throwable $e) use ($player): void {
+                        unset(self::$promiseInventory[$player->getXuid()]);
+                        Server::getInstance()->getLogger()->error($e->getMessage());
+                    });
+                }, 2000);
+            }
         }
     }
 
