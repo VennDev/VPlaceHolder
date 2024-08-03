@@ -64,21 +64,21 @@ trait PlaceHolderHandler
     /**
      * @throws Throwable
      */
-    public static function closureOnePlaceHolder(string $text, callable $callable): void
+    public static function closureOnePlaceHolder(Player $player, string $key, string $text, callable $callable): void
     {
         $replacePromise = str_replace(array_keys(self::$placeholdersPromises), "...", $text);
         if ($replacePromise !== $text) {
-            new Async(function () use ($text, $callable): void {
+            new Async(function () use ($player, $text, $callable): void {
                 foreach (self::$placeholdersPromises as $key => $value) {
-                    $text = Async::await(self::pregMatchCallable($key, $text, $value, true));
+                    $text = Async::await(self::pregMatchCallable($player, $key, $text, $value, true));
                     if (str_replace(array_keys(self::$placeholdersPromises), "...", $text) === $text) break;
                 }
                 $callable($text);
             });
         } else {
-            new Async(function () use ($text, $callable): void {
+            new Async(function () use ($player, $text, $callable): void {
                 foreach (self::$placeholdersNormal as $key => $value) {
-                    is_callable($value) ? $text = self::pregMatchCallable($key, $text, $value) : $text = str_replace($key, $value, $text);
+                    is_callable($value) ? $text = self::pregMatchCallable($player, $key, $text, $value) : $text = str_replace($key, $value, $text);
                     if (str_replace(array_keys(self::$placeholdersNormal), "...", $text) === $text) break;
                     FiberManager::wait();
                 }
@@ -94,7 +94,7 @@ trait PlaceHolderHandler
     {
         if (preg_match_all("/$key\((.*?)\)/", $text, $matches, PREG_SET_ORDER)) {
             if ($isAsync) {
-                return new Async(function() use ($player, $matches, $value, $text, $key): string {
+                return new Async(function () use ($player, $matches, $value, $text, $key): string {
                     foreach ($matches as $match) {
                         if (empty($match[1]) || !is_string($match[1])) throw new InvalidArgumentException("The placeholder $key must have a parameter");
                         $params = preg_split("/, (?=(?:[^']*'[^']*')*[^']*$)/", $match[1]);
