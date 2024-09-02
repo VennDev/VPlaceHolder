@@ -39,7 +39,7 @@ $player->sendTip("{player}(VennDev, 1000)"); // Output: Hello VennDev, your age 
 VPlaceHolder::registerPlaceHolder("{say_player}", function (string $player, string $message) {
     return $message . $player;
 });
-$player->sendTip("{player}(VennDev, 'Hello, you')"); // Output: Hello, you VennDev
+$player->sendTip("{say_player}(VennDev, 'Hello, you')"); // Output: Hello, you VennDev
 ```
 - Register Async PlaceHolder
 ```php
